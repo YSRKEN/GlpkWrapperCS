@@ -1,5 +1,5 @@
 # 概要
-　この文章は、『[GLPK for C#/CLI]()』のラッパークラス「GlpkWrapperCS」についての解説です。  
+　この文章は、『[GLPK for C#/CLI](http://glpk-cli.sourceforge.net)』のラッパークラス「GlpkWrapperCS」についての解説です。  
 　GLPKの全APIをサポートはしていないのでご注意ください。
 
 ※元のGLPKは添字が1オリジンですが、GlpkWrapperCSでは0オリジンに変更しています。間違わないように！
