@@ -69,6 +69,22 @@ namespace GlpkWrapperCS {
 				iocp.msg_lev = GLPK.GLP_MSG_OFF;
 			return (SolverResult)GLPK.glp_intopt(problem, iocp);
 		}
+		// LPファイルとして出力
+		public string ToLpString() {
+			var output = "";
+			// 制約式の方向
+			if(ObjDir == ObjectDirection.Maximize)
+				output += "maximize\n";
+			else
+				output += "minimize\n";
+			// 目的関数
+
+			// 制約式
+
+			// 変数条件
+
+			return output;
+		}
 		#region 目的関数関係
 		// 最適化の方向
 		public ObjectDirection ObjDir {
