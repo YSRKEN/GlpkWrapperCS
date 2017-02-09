@@ -9,10 +9,15 @@ namespace GlpkSample {
 	using org.gnu.glpk;
 	class Program {
 		static void Main(string[] args) {
-			//Console.WriteLine($"{GLPK.GLP_FR} {GLPK.GLP_UP} {GLPK.GLP_LO} {GLPK.GLP_DB} {GLPK.GLP_FX}");
+			Console.WriteLine($"{GLPK.GLP_CV} {GLPK.GLP_IV} {GLPK.GLP_BV}");
+			// GLPK for C#/CLIをそのまま使った場合
 			Func1();
 			Console.WriteLine("");
+			// GlpkWrapperCSを使った場合 その1
 			Func2();
+			Console.WriteLine("");
+			// GlpkWrapperCSを使った場合 その2
+			Func3();
 		}
 		// GLPK for C#/CLIをそのまま使った場合
 		static void Func1() {
@@ -123,12 +128,62 @@ namespace GlpkSample {
 				var ar = new double[] { 1.0, 1.0, 1.0, 10.0, 4.0, 5.0, 2.0, 2.0, 6.0 };
 				problem.LoadMatrix(ia, ja, ar);
 				// 最適化
-				problem.Simplex();
+				var result = problem.Simplex();
+				Console.WriteLine(result);
 				// 結果表示
 				Console.WriteLine("");
-				Console.Write($"z = {problem.LpObjVal}");
+				Console.Write($"z = {problem.LpObjValue}");
 				for(int i = 0; i < problem.ColumnsCount; ++i) {
 					Console.Write($" {problem.ColumnName[i]} = {problem.LpColumnValue[i]}");
+				}
+				Console.WriteLine("");
+			}
+		}
+		// GlpkWrapperCSを使った場合 その2
+		static void Func3() {
+			Console.WriteLine("【GlpkWrapperCS - 2】");
+			using(var problem = new MipProblem()) {
+				// 問題名
+				problem.Name = "sample2";
+				// 最適化の方向
+				problem.ObjDir = ObjectDirection.Maximize;
+				// 制約式の数・名前・範囲
+				problem.AddRows(3);
+				problem.RowName[0] = "p";
+				problem.RowName[1] = "q";
+				problem.RowName[2] = "r";
+				problem.SetRowBounds(0, BoundsType.Upper, 0.0, 100.0);
+				problem.SetRowBounds(1, BoundsType.Upper, 0.0, 600.0);
+				problem.SetRowBounds(2, BoundsType.Upper, 0.0, 300.0);
+				// 変数の数・名前・範囲
+				problem.AddColumns(3);
+				problem.ColumnName[0] = "x1";
+				problem.ColumnName[1] = "x2";
+				problem.ColumnName[2] = "x3";
+				problem.SetColumnBounds(0, BoundsType.Lower, 0.0, 0.0);
+				problem.SetColumnBounds(1, BoundsType.Lower, 0.0, 0.0);
+				problem.SetColumnBounds(2, BoundsType.Lower, 0.0, 0.0);
+				// 目的関数の係数
+				problem.ObjCoef[0] = 10.0;
+				problem.ObjCoef[1] = 6.0;
+				problem.ObjCoef[2] = 4.0;
+				// 制約式の係数
+				var ia = new int[] { 0, 0, 0, 1, 1, 1, 2, 2, 2 };
+				var ja = new int[] { 0, 1, 2, 0, 1, 2, 0, 1, 2 };
+				var ar = new double[] { 1.0, 1.0, 1.0, 10.0, 4.0, 5.0, 2.0, 2.0, 6.0 };
+				problem.LoadMatrix(ia, ja, ar);
+				// 変数条件
+				problem.ColumnKind[0] = VariableKind.Integer;
+				problem.ColumnKind[1] = VariableKind.Integer;
+				problem.ColumnKind[2] = VariableKind.Integer;
+				// 最適化
+				var result = problem.BranchAndCut();
+				Console.WriteLine(result);
+				// 結果表示
+				Console.WriteLine("");
+				Console.Write($"z = {problem.MipObjValue}");
+				for(int i = 0; i < problem.ColumnsCount; ++i) {
+					Console.Write($" {problem.ColumnName[i]} = {problem.MipColumnValue[i]}");
 				}
 				Console.WriteLine("");
 			}

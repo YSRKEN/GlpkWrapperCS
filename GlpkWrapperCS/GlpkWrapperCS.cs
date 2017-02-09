@@ -8,6 +8,7 @@ namespace GlpkWrapperCS {
 	using org.gnu.glpk;
 	enum ObjectDirection { Minimize = 1, Maximize = 2, }
 	enum BoundsType { Free = 1, Lower = 2, Upper = 3, Double = 4, Fixed = 5, }
+	enum VariableKind { Continuous = 1, Integer = 2, Binary = 3, }
 	enum SolverResult {
 		OK = 0,						//正常に解けた
 		ErrorBadBasis = 1,			//初期基底に誤りがあった
@@ -41,7 +42,9 @@ namespace GlpkWrapperCS {
 			ColumnType = new columnType(this);
 			ColumnLB = new columnLb(this);
 			ColumnUB = new columnUb(this);
+			ColumnKind = new columnKind(this);
 			LpColumnValue = new lpColumnValue(this);
+			MipColumnValue = new mipColumnValue(this);
 		}
 		// Disposeメソッド
 		public void Dispose() { }
@@ -53,6 +56,10 @@ namespace GlpkWrapperCS {
 		// 最適化処理
 		public SolverResult Simplex() {
 			return (SolverResult)GLPK.glp_simplex(problem, null);
+		}
+		public SolverResult BranchAndCut() {
+			GLPK.glp_simplex(problem, null);
+			return (SolverResult)GLPK.glp_intopt(problem, null);
 		}
 		#region 目的関数関係
 		// 最適化の方向
@@ -75,6 +82,9 @@ namespace GlpkWrapperCS {
 		// 最適化後の値
 		public double LpObjValue {
 			get { return GLPK.glp_get_obj_val(problem); }
+		}
+		public double MipObjValue {
+			get { return GLPK.glp_mip_obj_val(problem); }
 		}
 		#endregion
 		#region 制約式関係
@@ -212,6 +222,18 @@ namespace GlpkWrapperCS {
 			}
 		}
 		public columnUb ColumnUB;
+		// 変数条件
+		public class columnKind {
+			MipProblem mip;
+			public columnKind(MipProblem mip) {
+				this.mip = mip;
+			}
+			public VariableKind this[int index] {
+				get { return (VariableKind)GLPK.glp_get_col_kind(mip.problem, index + 1); }
+				set { GLPK.glp_set_col_kind(mip.problem, index + 1, (int)value); }
+			}
+		}
+		public columnKind ColumnKind;
 		// 変数の値
 		public class lpColumnValue {
 			MipProblem mip;
@@ -223,6 +245,16 @@ namespace GlpkWrapperCS {
 			}
 		}
 		public lpColumnValue LpColumnValue;
+		public class mipColumnValue {
+			MipProblem mip;
+			public mipColumnValue(MipProblem mip) {
+				this.mip = mip;
+			}
+			public double this[int index] {
+				get { return GLPK.glp_mip_col_val(mip.problem, index + 1); }
+			}
+		}
+		public mipColumnValue MipColumnValue;
 		#endregion
 	}
 }
