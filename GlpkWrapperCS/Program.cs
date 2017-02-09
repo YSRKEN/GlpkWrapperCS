@@ -177,7 +177,7 @@ namespace GlpkSample {
 				problem.ColumnKind[1] = VariableKind.Integer;
 				problem.ColumnKind[2] = VariableKind.Integer;
 				// 最適化
-				var result = problem.BranchAndCut();
+				var result = problem.BranchAndCut(true);
 				Console.WriteLine(result);
 				// 結果表示
 				Console.WriteLine("");

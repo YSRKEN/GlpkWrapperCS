@@ -54,12 +54,20 @@ namespace GlpkWrapperCS {
 			set { GLPK.glp_set_prob_name(problem, value); }
 		}
 		// 最適化処理
-		public SolverResult Simplex() {
-			return (SolverResult)GLPK.glp_simplex(problem, null);
+		public SolverResult Simplex(bool messageFlg = true) {
+			glp_smcp smcp = new glp_smcp();
+			GLPK.glp_init_smcp(smcp);
+			if(!messageFlg)
+				smcp.msg_lev = GLPK.GLP_MSG_OFF;
+			return (SolverResult)GLPK.glp_simplex(problem, smcp);
 		}
-		public SolverResult BranchAndCut() {
-			GLPK.glp_simplex(problem, null);
-			return (SolverResult)GLPK.glp_intopt(problem, null);
+		public SolverResult BranchAndCut(bool messageFlg = true) {
+			Simplex(messageFlg);
+			glp_iocp iocp = new glp_iocp();
+			GLPK.glp_init_iocp(iocp);
+			if(!messageFlg)
+				iocp.msg_lev = GLPK.GLP_MSG_OFF;
+			return (SolverResult)GLPK.glp_intopt(problem, iocp);
 		}
 		#region 目的関数関係
 		// 最適化の方向
