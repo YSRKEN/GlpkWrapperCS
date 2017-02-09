@@ -6,9 +6,25 @@ using System.Threading.Tasks;
 
 namespace GlpkWrapperCS {
 	using org.gnu.glpk;
-	enum ObjectDirection { Minimize = 1, Maximize = 2 }
-	enum BoundsType { Free = 1, Lower = 2, Upper = 3, Double = 4, Fixed = 5 }
-	enum SolverResult {  }
+	enum ObjectDirection { Minimize = 1, Maximize = 2, }
+	enum BoundsType { Free = 1, Lower = 2, Upper = 3, Double = 4, Fixed = 5, }
+	enum SolverResult {
+		OK = 0,						//正常に解けた
+		ErrorBadBasis = 1,			//初期基底に誤りがあった
+		ErrorSingular = 2,			//基底行列が特異になった
+		ErrorCondition = 3,			//基底行列の条件数が大きすぎる
+		ErrorBound = 4,				//変数の範囲設定に誤りがある
+		ErrorFail = 5,				//ソルバーに障害が発生した
+		ErrorObjectLowerLimit = 6,	//目的関数が下限に達した
+		ErrorObjectUpperLimit = 7,	//目的関数が上限に達した
+		ErrorIterationLimit = 8,	//反復回数の制限を超えた
+		ErrorTimeLimit = 9,			//計算時間の制限を超えた
+		ErrorNoPrimalSolution = 10,	//主問題の解が存在しない
+		ErrorNoDualSolution = 11,	//双対問題の解が存在しない
+		ErrorRoot = 12,				//初期解として緩和解が与えられなかった
+		ErrorStop = 13,				//検索が強制的に終了させられた
+		ErrorMipGap = 14,			//ギャップが公差に達したので早期に終了した
+	}
 	class MipProblem : IDisposable {
 		glp_prob problem = GLPK.glp_create_prob();
 		// コンストラクタ
@@ -35,8 +51,8 @@ namespace GlpkWrapperCS {
 			set { GLPK.glp_set_prob_name(problem, value); }
 		}
 		// 最適化処理
-		public void Simplex() {
-			GLPK.glp_simplex(problem, null);
+		public SolverResult Simplex() {
+			return (SolverResult)GLPK.glp_simplex(problem, null);
 		}
 		#region 目的関数関係
 		// 最適化の方向
@@ -57,7 +73,7 @@ namespace GlpkWrapperCS {
 		}
 		public objCoef ObjCoef;
 		// 最適化後の値
-		public double LpObjVal {
+		public double LpObjValue {
 			get { return GLPK.glp_get_obj_val(problem); }
 		}
 		#endregion
