@@ -37,6 +37,7 @@ namespace GlpkWrapperCS {
 			RowType = new rowType(this);
 			RowLB = new rowLb(this);
 			RowUB = new rowUb(this);
+			RowMatrix = new rowMatrix(this);
 			// 変数関係
 			ColumnName = new columnName(this);
 			ColumnType = new columnType(this);
@@ -69,6 +70,13 @@ namespace GlpkWrapperCS {
 				iocp.msg_lev = GLPK.GLP_MSG_OFF;
 			return (SolverResult)GLPK.glp_intopt(problem, iocp);
 		}
+		// 数値を符号付きで文字化する
+		string SignedToString(double n) {
+			if(n >= 0.0)
+				return $"+{n}";
+			else
+				return $"{n}";
+		}
 		// LPファイルとして出力
 		public string ToLpString() {
 			var output = "";
@@ -78,11 +86,74 @@ namespace GlpkWrapperCS {
 			else
 				output += "minimize\n";
 			// 目的関数
-
+			for(int ci = 0; ci < ColumnsCount; ++ci) {
+				output += $" {SignedToString(ObjCoef[ci])} x{ci + 1}";
+			}
+			output += "\n";
 			// 制約式
-
+			output += "subject to\n";
+			for(int ri = 0; ri < RowsCount; ++ri) {
+				// 左辺となる数式を文字列化する
+				var equationLeft = "";
+				var matrix = RowMatrix[ri];
+				var sortedMatrix = matrix.OrderBy((x) => x.Key);
+				foreach(var pair in sortedMatrix) {
+					equationLeft += $" {SignedToString(pair.Value)} x{pair.Key + 1}";
+				}
+				// 右辺の種類・下限・上限から追加する数式を決める
+				switch(RowType[ri]) {
+				case BoundsType.Free:
+					break;
+				case BoundsType.Lower:
+					output += $"{equationLeft} >= {RowLB[ri]}\n";
+					break;
+				case BoundsType.Upper:
+					output += $"{equationLeft} <= {RowUB[ri]}\n";
+					break;
+				case BoundsType.Double:
+					output += $"{equationLeft} >= {RowLB[ri]}\n";
+					output += $"{equationLeft} <= {RowUB[ri]}\n";
+					break;
+				case BoundsType.Fixed:
+					output += $"{equationLeft} = {RowLB[ri]}\n";
+					break;
+				}
+			}
 			// 変数条件
-
+			output += "bounds\n";
+			for(int ri = 0; ri < ColumnsCount; ++ri) {
+				var variableString = $"x{ri + 1}";
+				switch(ColumnType[ri]) {
+				case BoundsType.Free:
+					break;
+				case BoundsType.Lower:
+					output += $"{variableString} >= {ColumnLB[ri]}\n";
+					break;
+				case BoundsType.Upper:
+					output += $"{variableString} <= {ColumnUB[ri]}\n";
+					break;
+				case BoundsType.Double:
+					output += $"{variableString} >= {ColumnLB[ri]}\n";
+					output += $"{variableString} <= {ColumnUB[ri]}\n";
+					break;
+				case BoundsType.Fixed:
+					output += $"{variableString} = {ColumnLB[ri]}\n";
+					break;
+				}
+			}
+			output += "general\n";
+			for(int ri = 0; ri < ColumnsCount; ++ri) {
+				if((int)ColumnType[ri] == (int)VariableKind.Integer) {
+					output += $" x{ri + 1}";
+				}
+			}
+			output += "\nbinary\n";
+			for(int ri = 0; ri < ColumnsCount; ++ri) {
+				if((int)ColumnType[ri] == (int)VariableKind.Binary) {
+					output += $" x{ri + 1}";
+				}
+			}
+			output += "\n";
 			return output;
 		}
 		#region 目的関数関係
@@ -171,6 +242,7 @@ namespace GlpkWrapperCS {
 		public rowUb RowUB;
 		// 制約式の係数
 		public void LoadMatrix(int size, int[] ia, int[] ja, double[] ar) {
+			// 係数を問題に代入する
 			var ia_ = GLPK.new_intArray(size + 1);
 			var ja_ = GLPK.new_intArray(size + 1);
 			var ar_ = GLPK.new_doubleArray(size + 1);
@@ -187,6 +259,35 @@ namespace GlpkWrapperCS {
 		public void LoadMatrix(int[] ia, int[] ja, double[] ar) {
 			LoadMatrix(ia.Count(), ia, ja, ar);
 		}
+		public class rowMatrix {
+			// 係数を問題から読み込む
+			MipProblem mip;
+			public rowMatrix(MipProblem mip) {
+				this.mip = mip;
+			}
+			public Dictionary<int, double> this[int index] {
+				get {
+					var matrix = new Dictionary<int, double>();
+					// まずは変数に読み込む
+					var length = GLPK.glp_get_mat_row(mip.problem, index + 1, null, null);
+					var key = GLPK.new_intArray(length + 1);
+					var value = GLPK.new_doubleArray(length + 1);
+					GLPK.glp_get_mat_row(mip.problem, index + 1, key, value);
+					// 次にDictionaryにコピーする
+					for(int i = 1; i <= length; ++i) {
+						matrix.Add(
+							GLPK.intArray_getitem(key, i) - 1,
+							GLPK.doubleArray_getitem(value, i)
+						);
+					}
+					// 最後に後片付けする
+					GLPK.delete_intArray(key);
+					GLPK.delete_doubleArray(value);
+					return matrix;
+				}
+			}
+		}
+		public rowMatrix RowMatrix;
 		#endregion
 		#region 変数関係
 		// 変数を追加する

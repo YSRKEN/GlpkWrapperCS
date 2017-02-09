@@ -185,7 +185,8 @@ namespace GlpkSample {
 				for(int i = 0; i < problem.ColumnsCount; ++i) {
 					Console.Write($" {problem.ColumnName[i]} = {problem.MipColumnValue[i]}");
 				}
-				Console.WriteLine("");
+				Console.WriteLine("\n\n【LPファイル】");
+				Console.WriteLine(problem.ToLpString());
 			}
 		}
 	}
