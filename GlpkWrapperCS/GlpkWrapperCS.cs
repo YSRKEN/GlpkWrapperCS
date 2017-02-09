@@ -63,7 +63,7 @@ namespace GlpkWrapperCS {
 			return (SolverResult)GLPK.glp_simplex(problem, smcp);
 		}
 		public SolverResult BranchAndCut(bool messageFlg = true) {
-			Simplex(messageFlg);
+			Simplex(false);
 			glp_iocp iocp = new glp_iocp();
 			GLPK.glp_init_iocp(iocp);
 			if(!messageFlg)
